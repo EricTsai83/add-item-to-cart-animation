@@ -192,4 +192,4 @@ Issues and Pull Requests are welcome!
 
 ## 📄 License
 
-This project is a personal project, for learning and demonstration purposes only.
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
