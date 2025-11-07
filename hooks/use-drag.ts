@@ -10,22 +10,17 @@ type UseDragReturn = {
   ) => void;
 };
 
+const DEFAULT_POSITION = { x: 0, y: 0 } satisfies Position;
+
 /**
- * Hook for managing drag functionality
- * Handles position state and drag end events for draggable elements
- *
- * @param initialPosition - Initial position of the draggable element
- * @returns Drag state and handlers
+ * Drag Hook
+ * Manages position state of draggable elements
  */
 export const useDrag = (
-  initialPosition: Position = { x: 0, y: 0 },
+  initialPosition: Position = DEFAULT_POSITION,
 ): UseDragReturn => {
   const [position, setPosition] = useState<Position>(initialPosition);
 
-  /**
-   * Handle drag end event
-   * Updates position based on drag offset
-   */
   const handleDragEnd = useCallback(
     (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo): void => {
       setPosition({ x: info.offset.x, y: info.offset.y });

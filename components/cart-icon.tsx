@@ -2,6 +2,9 @@ type CartIconProps = {
   readonly className?: string;
 };
 
+/**
+ * Cart icon component
+ */
 export const CartIcon = ({ className = "w-6" }: CartIconProps) => {
   return (
     <svg

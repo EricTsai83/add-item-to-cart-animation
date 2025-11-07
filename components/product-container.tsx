@@ -10,20 +10,21 @@ type ProductContainerProps = {
     info: PanInfo,
   ) => void;
   readonly onClick: () => void;
-  readonly imageSrc?: string;
-  readonly imageAlt?: string;
+  readonly imageSrc: string;
+  readonly imageAlt: string;
 };
 
 /**
- * Draggable product container component
+ * Product container component
+ * Draggable product image, click to add to cart
  */
 export const ProductContainer = ({
   productImageRef,
   position,
   onDragEnd,
   onClick,
-  imageSrc = "/item.jpg",
-  imageAlt = "商品",
+  imageSrc,
+  imageAlt,
 }: ProductContainerProps) => {
   return (
     <motion.div
@@ -55,7 +56,7 @@ export const ProductContainer = ({
         </div>
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <span className="text-sm font-semibold text-white drop-shadow-lg px-3 py-1.5 bg-black/50 rounded-md backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            點擊加入購物車
+            Add to cart
           </span>
         </div>
       </motion.div>

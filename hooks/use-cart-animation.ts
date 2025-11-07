@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import type { AnimationData } from "@/types";
 import type { AnimationConfig } from "@/config/animation-config";
 
@@ -6,18 +6,31 @@ type UseCartAnimationReturn = {
   readonly cartRef: React.RefObject<HTMLButtonElement | null>;
   readonly productImageRef: React.RefObject<HTMLDivElement | null>;
   readonly animationDataList: readonly AnimationData[];
-  readonly addToCart: () => Promise<void>;
+  readonly addToCart: () => void;
 };
 
 /**
- * Hook for managing add-to-cart animation
- * Handles animation calculations and UI state for product flying to cart
- *
- * This hook is independent of drag functionality and can be used
- * in projects that don't require dragging features.
- *
- * @param config - Animation configuration settings
- * @returns Animation refs, state, and handlers
+ * Calculate the center point coordinates of an element
+ */
+const calculateElementCenter = (
+  rect: DOMRect,
+): { readonly x: number; readonly y: number } => {
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2,
+  };
+};
+
+/**
+ * Generate unique animation ID
+ */
+const generateAnimationId = (): string => {
+  return `${Date.now()}-${Math.random()}`;
+};
+
+/**
+ * Cart animation Hook
+ * Manages animation effects when products are added to cart
  */
 export const useCartAnimation = (
   config: AnimationConfig,
@@ -27,13 +40,19 @@ export const useCartAnimation = (
   >([]);
   const cartRef = useRef<HTMLButtonElement>(null);
   const productImageRef = useRef<HTMLDivElement>(null);
+  const timeoutRefs = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
-  /**
-   * Trigger add to cart animation
-   * Calculates positions and animates product flying to cart
-   * Supports multiple simultaneous animations
-   */
-  const addToCart = useCallback(async (): Promise<void> => {
+  useEffect(() => {
+    const timeoutMap = timeoutRefs.current;
+    return () => {
+      timeoutMap.forEach((timeout) => {
+        clearTimeout(timeout);
+      });
+      timeoutMap.clear();
+    };
+  }, []);
+
+  const addToCart = useCallback((): void => {
     const cartElement = cartRef.current;
     const productElement = productImageRef.current;
 
@@ -44,43 +63,31 @@ export const useCartAnimation = (
     const cartRect = cartElement.getBoundingClientRect();
     const productRect = productElement.getBoundingClientRect();
 
-    const cartCenter = {
-      x: cartRect.left + cartRect.width / 2,
-      y: cartRect.top + cartRect.height / 2,
-    };
+    const cartCenter = calculateElementCenter(cartRect);
+    const productCenter = calculateElementCenter(productRect);
 
-    const productCenter = {
-      x: productRect.left + productRect.width / 2,
-      y: productRect.top + productRect.height / 2,
-    };
-
-    const distanceX = cartCenter.x - productCenter.x;
-    const distanceY = cartCenter.y - productCenter.y;
-
-    const animationId = `${Date.now()}-${Math.random()}`;
+    const animationId = generateAnimationId();
     const newAnimationData: AnimationData = {
       id: animationId,
       left: productRect.left,
       top: productRect.top,
       width: productRect.width,
       height: productRect.height,
-      distanceX,
-      distanceY,
+      distanceX: cartCenter.x - productCenter.x,
+      distanceY: cartCenter.y - productCenter.y,
     };
 
-    // Add new animation to the list
     setAnimationDataList((prev) => [...prev, newAnimationData]);
 
-    // Wait for animation to complete, then remove it
-    const animationDuration = (config.speed + config.delay) * 1000;
-    await new Promise<void>((resolve) =>
-      setTimeout(resolve, animationDuration),
-    );
+    const timeoutDuration = (config.speed + config.delay) * 1000;
+    const timeout = setTimeout(() => {
+      setAnimationDataList((prev) =>
+        prev.filter((data) => data.id !== animationId),
+      );
+      timeoutRefs.current.delete(animationId);
+    }, timeoutDuration);
 
-    // Remove this animation from the list
-    setAnimationDataList((prev) =>
-      prev.filter((data) => data.id !== animationId),
-    );
+    timeoutRefs.current.set(animationId, timeout);
   }, [config.speed, config.delay]);
 
   return {

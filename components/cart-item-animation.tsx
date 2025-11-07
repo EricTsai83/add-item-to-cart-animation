@@ -2,44 +2,95 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import type { AnimationData } from "@/types";
 import type { AnimationConfig } from "@/config/animation-config";
+import {
+  generatePathKeyframes,
+  calculateParabolaYAnimation,
+  calculateRotationDirection,
+} from "@/utils/animation-helpers";
 
 type CartItemAnimationProps = {
   readonly animationData: AnimationData;
   readonly config: AnimationConfig;
-  readonly imageSrc?: string;
+  readonly imageSrc: string;
 };
 
 /**
- * Animation component that shows the product flying to the cart with enhanced visuals
+ * Cart item animation component
+ * Displays animation effect of product flying from product position to cart
  */
 export const CartItemAnimation = ({
   animationData,
   config,
-  imageSrc = "/item.jpg",
+  imageSrc,
 }: CartItemAnimationProps) => {
   const baseTransition = {
     duration: config.speed,
     delay: config.delay,
   };
 
+  const customPath = generatePathKeyframes(
+    config.pathType,
+    animationData.distanceX,
+    animationData.distanceY,
+    config.pathHeight,
+    50,
+    config.spiralTurns ?? 2,
+  );
+
+  const hasParabola = config.pathType === "parabola" && config.pathHeight > 0;
+
+  const yAnimation = hasParabola
+    ? [
+        ...calculateParabolaYAnimation(
+          animationData.distanceY,
+          config.pathHeight,
+        ),
+      ]
+    : customPath !== null
+    ? [...customPath.y]
+    : animationData.distanceY;
+
+  const xAnimation =
+    customPath !== null ? [...customPath.x] : animationData.distanceX;
+
+  const rotation = config.rotation ?? 0;
+  const rotationDirection = calculateRotationDirection(animationData.distanceX);
+  const blurValue = config.blur ?? 0;
+  const scaleEnabled = config.scale ?? true;
+  const fadeEnabled = config.fade ?? true;
+
   return (
     <motion.div
       className="fixed grid place-items-center pointer-events-none z-9999"
       initial={{ x: 0, y: 0, opacity: 1 }}
       animate={{
-        x: animationData.distanceX,
-        y: animationData.distanceY,
-        opacity: [1, 1, 0.9, 0.8],
+        x: xAnimation,
+        y: yAnimation,
+        opacity: fadeEnabled ? [1, 1, 0.9, 0.7, 0] : 1,
       }}
       exit={{ opacity: 0 }}
       transition={{
-        ...baseTransition,
-        ease: config.xEasing,
-        opacity: {
-          duration: config.speed * 0.8,
-          delay: config.delay,
-          times: [0, 0.3, 0.7, 1],
+        x: {
+          ...baseTransition,
+          ease: config.xEasing,
+          times: customPath !== null ? customPath.times : undefined,
         },
+        y: {
+          ...baseTransition,
+          ease: config.yEasing,
+          times: hasParabola
+            ? [0, 0.5, 1]
+            : customPath !== null
+            ? customPath.times
+            : undefined,
+        },
+        opacity: fadeEnabled
+          ? {
+              duration: config.speed * 0.8,
+              delay: config.delay,
+              times: [0, 0.2, 0.5, 0.8, 1],
+            }
+          : undefined,
       }}
       style={{
         left: animationData.left,
@@ -55,11 +106,13 @@ export const CartItemAnimation = ({
           width: "100%",
           borderRadius: "12px",
           rotate: 0,
+          filter: "blur(0px)",
         }}
         animate={{
-          width: "32px",
-          borderRadius: "50%",
-          rotate: animationData.distanceX < 0 ? -360 : 360,
+          width: scaleEnabled ? "32px" : "100%",
+          borderRadius: scaleEnabled ? "50%" : "12px",
+          rotate: rotation * rotationDirection,
+          filter: `blur(${blurValue}px)`,
           boxShadow: [
             "0 10px 25px rgba(0, 0, 0, 0.2)",
             "0 5px 15px rgba(0, 0, 0, 0.3)",
@@ -69,13 +122,15 @@ export const CartItemAnimation = ({
         transition={{
           ...baseTransition,
           ease: config.scaleEasing,
-          rotate: {
-            ...baseTransition,
-            ease: "easeInOut",
-          },
+          rotate: { ...baseTransition, ease: config.scaleEasing },
           boxShadow: {
             ...baseTransition,
             times: [0, 0.5, 1],
+          },
+          filter: {
+            duration: config.speed,
+            delay: config.delay,
+            ease: "easeOut",
           },
         }}
       >
@@ -87,16 +142,6 @@ export const CartItemAnimation = ({
           style={{ borderRadius: "inherit" }}
           draggable={false}
           unoptimized
-        />
-        {/* 光暈效果 */}
-        <motion.div
-          className="absolute inset-0 bg-linear-to-br from-blue-400/30 to-purple-400/30 rounded-full"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 0.5, 0.3, 0] }}
-          transition={{
-            ...baseTransition,
-            times: [0, 0.2, 0.6, 1],
-          }}
         />
       </motion.div>
     </motion.div>

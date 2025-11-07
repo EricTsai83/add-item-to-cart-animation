@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "購物車動畫演示",
-  description: "互動式購物車動畫演示 - 拖動商品或購物車，點擊商品添加到購物車",
+  title: "Cart Animation Demo",
+  description:
+    "Interactive cart animation demo - Drag products or cart, click products to add to cart",
 };
 
 export default function RootLayout({

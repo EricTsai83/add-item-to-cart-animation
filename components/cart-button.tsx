@@ -12,7 +12,8 @@ type CartButtonProps = {
 };
 
 /**
- * Draggable cart button component with enhanced styling
+ * Cart button component
+ * Draggable cart icon button
  */
 export const CartButton = forwardRef<HTMLButtonElement, CartButtonProps>(
   ({ position, onDragEnd }, ref) => {
@@ -20,7 +21,7 @@ export const CartButton = forwardRef<HTMLButtonElement, CartButtonProps>(
       <motion.button
         ref={ref}
         className="fixed top-6 right-6 w-14 h-14 rounded-full bg-white shadow-lg hover:shadow-xl border border-gray-200 p-0 cursor-grab active:cursor-grabbing select-none z-50 transition-shadow duration-200 flex items-center justify-center group"
-        aria-label="購物車 - 可拖動"
+        aria-label="Cart - Draggable"
         drag
         dragMomentum={false}
         dragConstraints={false}
